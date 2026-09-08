@@ -1,0 +1,19 @@
+# Whitelist of tables/columns exposed to the LLM and to query execution.
+# Phase 1 (Schema Introspection & Context Builder) reads this file to filter
+# information_schema results before anything is shown to the model.
+# Phase 3 (Safety & Execution Layer) re-checks generated SQL against this
+# same file as an independent guardrail layer.
+
+tables:
+  plans:
+    columns: [id, name, monthly_price, tier]
+  customers:
+    columns: [id, name, company, signup_date, country, plan_id, status]
+  subscriptions:
+    columns: [id, customer_id, plan_id, started_at, ended_at, status]
+  invoices:
+    columns: [id, customer_id, amount, issued_at, paid_at, status]
+  usage_events:
+    columns: [id, customer_id, event_type, occurred_at]
+  support_tickets:
+    columns: [id, customer_id, opened_at, closed_at, priority, status]

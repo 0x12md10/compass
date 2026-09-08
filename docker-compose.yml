@@ -1,0 +1,22 @@
+services:
+  db:
+    image: postgres:16
+    container_name: aac_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: aac
+      POSTGRES_PASSWORD: aac_dev_password
+      POSTGRES_DB: aac
+    ports:
+      - "5434:5432"
+    volumes:
+      - aac_pgdata:/var/lib/postgresql/data
+      - ./db/migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aac -d aac"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  aac_pgdata:
