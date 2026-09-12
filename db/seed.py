@@ -1,10 +1,12 @@
 """Seed script for the AI Analytics Copilot demo database.
 
 Populates plans, customers, subscriptions, invoices, usage_events, and
-support_tickets with ~18 months of realistic, deliberately messy data
-(churn, overdue invoices, open tickets, nulls) so aggregate questions
-produce plausible, non-trivial answers. See db/SCHEMA.md and
-REQUIREMENTS.md §2 for the schema this fills.
+support_tickets with ~3 years of realistic, deliberately messy data
+(churn, plan upgrades/downgrades, overdue invoices, open tickets, nulls,
+a Q4 seasonal signup bump) so aggregate questions produce plausible,
+non-trivial answers at a medium-business scale. See db/SCHEMA.md and
+REQUIREMENTS.md §2 for the fixed schema this fills — v2/SCOPE.md §5 for
+why the data got bigger without a schema change.
 
 Usage:
     python db/seed.py [--customers N] [--dsn postgresql://...]
@@ -20,7 +22,7 @@ from faker import Faker
 fake = Faker()
 
 TODAY = date.today()
-HISTORY_DAYS = 18 * 30  # ~18 months
+HISTORY_DAYS = 36 * 30  # ~3 years
 START_DATE = TODAY - timedelta(days=HISTORY_DAYS)
 
 PLANS = [
@@ -32,15 +34,38 @@ PLANS = [
 COUNTRIES = [
     "United States", "United Kingdom", "Canada", "Germany", "France",
     "Australia", "India", "Netherlands", "Sweden", "Brazil",
+    "Japan", "Singapore", "Ireland", "Spain", "Mexico",
+    "South Africa", "New Zealand", "Poland", "Italy", "South Korea",
 ]
 
-EVENT_TYPES = ["login", "api_call", "export", "dashboard_view", "invite_sent"]
+EVENT_TYPES = [
+    "login", "api_call", "export", "dashboard_view", "invite_sent",
+    "report_generated", "integration_connected", "billing_page_view",
+    "settings_changed", "search_performed",
+]
+
+# Q4 (Oct-Dec) signup bump — layered on top of the existing recency skew via
+# rejection sampling: Q4 candidate dates are always accepted, non-Q4 dates
+# are accepted 70% of the time (else redraw). Produces a visible, verifiable
+# seasonal pattern rather than a purely random walk.
+SEASONAL_BOOST_MONTHS = {10, 11, 12}
+
+# Fraction of non-trial customers with a plan upgrade/downgrade partway
+# through their lifetime (v2/SCOPE.md §5) — needs no schema change, just a
+# second subscriptions row.
+PLAN_CHANGE_RATE = 0.15
 
 
 def weighted_signup_date() -> date:
-    """Skew signups toward more recent months so growth trends look real."""
-    days_ago = int(random.triangular(0, HISTORY_DAYS, 0))
-    return TODAY - timedelta(days=days_ago)
+    """Skew signups toward more recent months (growth trend) AND toward Q4
+    (seasonal bump), so both trend and seasonality questions have something
+    real to show.
+    """
+    while True:
+        days_ago = int(random.triangular(0, HISTORY_DAYS, 0))
+        candidate = TODAY - timedelta(days=days_ago)
+        if candidate.month in SEASONAL_BOOST_MONTHS or random.random() < 0.7:
+            return candidate
 
 
 def build_customer(plan_ids: list[int]) -> dict:
@@ -63,28 +88,71 @@ def build_customer(plan_ids: list[int]) -> dict:
     }
 
 
-def build_subscription(customer_id: int, plan_id: int, signup_date: date, status: str) -> dict:
-    started_at = signup_date
+def build_subscriptions(
+    customer_id: int, initial_plan_id: int, plan_ids: list[int], signup_date: date, status: str
+) -> tuple[list[dict], int]:
+    """Returns (subscription rows in chronological order, the customer's
+    final/current plan_id). Occasionally inserts a plan upgrade/downgrade
+    as a second row rather than mutating the first — subscriptions is an
+    append-only history, matching how a real billing system would model it.
+    """
+    rows: list[dict] = []
+    current_plan = initial_plan_id
+    current_start = signup_date
+    tenure_days = (TODAY - signup_date).days
+
+    has_plan_change = status != "trial" and tenure_days > 180 and random.random() < PLAN_CHANGE_RATE
+    if has_plan_change:
+        change_offset = random.randint(90, max(91, tenure_days - 30))
+        change_date = min(TODAY, signup_date + timedelta(days=change_offset))
+        new_plan_id = random.choice([p for p in plan_ids if p != current_plan])
+        rows.append({
+            "customer_id": customer_id,
+            "plan_id": current_plan,
+            "started_at": current_start,
+            "ended_at": change_date,
+            "status": "ended",
+        })
+        current_plan = new_plan_id
+        current_start = change_date
+
     ended_at = None
     sub_status = "active"
     if status == "churned":
-        churn_days = random.randint(30, max(31, (TODAY - signup_date).days))
-        ended_at = min(TODAY, signup_date + timedelta(days=churn_days))
+        churn_days = random.randint(30, max(31, (TODAY - current_start).days))
+        ended_at = min(TODAY, current_start + timedelta(days=churn_days))
         sub_status = "ended"
-    return {
+
+    rows.append({
         "customer_id": customer_id,
-        "plan_id": plan_id,
-        "started_at": started_at,
+        "plan_id": current_plan,
+        "started_at": current_start,
         "ended_at": ended_at,
         "status": sub_status,
-    }
+    })
+
+    return rows, current_plan
 
 
-def build_invoices(customer_id: int, amount: float, signup_date: date, status: str) -> list[dict]:
+def _price_at(cursor_date: date, subscription_rows: list[dict], plan_price_by_id: dict[int, float]) -> float:
+    for row in subscription_rows:
+        if row["started_at"] <= cursor_date and (row["ended_at"] is None or cursor_date < row["ended_at"]):
+            return plan_price_by_id[row["plan_id"]]
+    return plan_price_by_id[subscription_rows[-1]["plan_id"]]
+
+
+def build_invoices(
+    customer_id: int, subscription_rows: list[dict], plan_price_by_id: dict[int, float], signup_date: date, status: str
+) -> list[dict]:
+    """Invoice amount tracks whichever plan was active at the time of
+    issuance — a customer who upgraded mid-lifetime shows a real step
+    change in their billing history, not a flat line.
+    """
     invoices = []
-    end = ended_boundary = TODAY
+    end = TODAY
     cursor = signup_date + timedelta(days=random.randint(1, 5))
     while cursor <= end:
+        amount = _price_at(cursor, subscription_rows, plan_price_by_id)
         issued_at = cursor
         roll = random.random()
         if roll < 0.85:
@@ -154,7 +222,7 @@ def build_support_tickets(customer_id: int, signup_date: date) -> list[dict]:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--customers", type=int, default=500)
+    parser.add_argument("--customers", type=int, default=2000)
     parser.add_argument(
         "--dsn",
         default="postgresql://aac:aac_dev_password@127.0.0.1:5434/aac",
@@ -177,6 +245,9 @@ def main() -> None:
 
     for _ in range(args.customers):
         c = build_customer(plan_ids)
+
+        # Insert with the initial plan first; corrected to the final plan
+        # below once subscription history (and any plan change) is known.
         cur.execute(
             """INSERT INTO customers (name, company, signup_date, country, plan_id, status)
                VALUES (%(name)s, %(company)s, %(signup_date)s, %(country)s, %(plan_id)s, %(status)s)
@@ -185,15 +256,20 @@ def main() -> None:
         )
         customer_id = cur.fetchone()[0]
 
-        sub = build_subscription(customer_id, c["plan_id"], c["signup_date"], c["status"])
-        cur.execute(
-            """INSERT INTO subscriptions (customer_id, plan_id, started_at, ended_at, status)
-               VALUES (%(customer_id)s, %(plan_id)s, %(started_at)s, %(ended_at)s, %(status)s)""",
-            sub,
+        subscription_rows, final_plan_id = build_subscriptions(
+            customer_id, c["plan_id"], plan_ids, c["signup_date"], c["status"]
         )
+        if final_plan_id != c["plan_id"]:
+            cur.execute("UPDATE customers SET plan_id = %s WHERE id = %s", (final_plan_id, customer_id))
 
-        amount = plan_price_by_id[c["plan_id"]]
-        for inv in build_invoices(customer_id, amount, c["signup_date"], c["status"]):
+        for sub in subscription_rows:
+            cur.execute(
+                """INSERT INTO subscriptions (customer_id, plan_id, started_at, ended_at, status)
+                   VALUES (%(customer_id)s, %(plan_id)s, %(started_at)s, %(ended_at)s, %(status)s)""",
+                sub,
+            )
+
+        for inv in build_invoices(customer_id, subscription_rows, plan_price_by_id, c["signup_date"], c["status"]):
             cur.execute(
                 """INSERT INTO invoices (customer_id, amount, issued_at, paid_at, status)
                    VALUES (%(customer_id)s, %(amount)s, %(issued_at)s, %(paid_at)s, %(status)s)""",
