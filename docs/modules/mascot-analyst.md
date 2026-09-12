@@ -5,7 +5,7 @@ Frontend files (as of v2): `frontend/src/components/mascot/*` (`MascotContext`, 
 
 Part of the v2 initiative — see `v2/SCOPE.md`, `v2/REQUIREMENTS.md`, `v2/BUILD_PLAN.md`. D5 (formal adversarial re-verification through the mascot specifically) is done — see below.
 
-> **v3 update:** the mascot was renamed **Compass** and gained an animated avatar, a full-page chat UI (`/compass`), and the app moved to a dashboard-as-home shell — none of which touched anything documented on this page (the backend `context`-seeding design below, and the file paths, are otherwise unchanged; only the dashboard page's own route moved from `/dashboard` to `/`). See `docs/modules/compass.md` for what changed and why it doesn't reopen anything below.
+> **v3 update:** the mascot was renamed **Compass** and gained an animated avatar, a full-page chat UI (`/compass`), and the app gained a nav shell — none of which touched anything documented on this page (the backend `context`-seeding design below, and the file paths, are otherwise unchanged; the dashboard page's route moved `/dashboard` → `/` → back to `/dashboard`, with `/` now the marketing landing page — see `docs/modules/compass.md`'s routing history). See `docs/modules/compass.md` for what changed and why it doesn't reopen anything below.
 
 ## What it does
 

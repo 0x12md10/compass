@@ -15,6 +15,6 @@ Implementation-reference documentation for this project — written for whoever 
   - [`frontend.md`](./modules/frontend.md) — Phase 5 frontend: the ask bar UI, chart components
   - [`dashboard.md`](./modules/dashboard.md) — v2 tickets D1-D2: fixed KPI tile queries + grid UI, still through the same restricted role
   - [`mascot-analyst.md`](./modules/mascot-analyst.md) — v2 tickets D3-D5: backend context-seeding, original frontend, guardrail re-verification
-  - [`compass.md`](./modules/compass.md) — v3 tickets P1-P6: Compass rebrand + avatar, app shell, dashboard-as-home, `/compass` chat UI, dashboard visual overhaul, `/landing`
+  - [`compass.md`](./modules/compass.md) — v3 tickets P1-P6 (+ post-launch polish): Compass rebrand + avatar, app shell, `/compass` chat UI, dashboard visual overhaul, landing page as the app's root
 
 These docs describe the state of the code as of when they were written — if you make a structural change, update the relevant doc in the same pass, the way you'd update a comment. They will drift if not kept current; treat a stale doc as a bug.

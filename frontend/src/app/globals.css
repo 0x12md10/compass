@@ -116,25 +116,12 @@
   }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #131320;
-    --foreground: var(--color-ghost-white);
-    --surface: #1c1c2b;
-    --surface-muted: #242434;
-    --border: rgba(230, 230, 240, 0.1);
-    --text-muted: rgba(230, 230, 240, 0.62);
-    --accent: var(--color-periwinkle);
-    --accent-strong: #a797ff;
-    --accent-contrast: #15122e;
-
-    --chart-series-1: #b8b8ff;
-    --chart-series-1-fill-from: rgba(184, 184, 255, 0.28);
-    --chart-series-1-fill-to: rgba(184, 184, 255, 0);
-    --chart-bar-fill: rgba(184, 184, 255, 0.4);
-    --chart-grid: rgba(230, 230, 240, 0.08);
-    --chart-axis: rgba(230, 230, 240, 0.28);
-  }
+/* Light-mode only, deliberately — this product has one designed look (the
+   Figma reference), not a dark variant. `color-scheme: light` also stops
+   browser/OS UI (form controls, scrollbars) from auto-darkening on top of
+   these colors regardless of the visitor's OS preference. */
+:root {
+  color-scheme: light;
 }
 
 body {

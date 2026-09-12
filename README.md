@@ -6,17 +6,15 @@
 
 See `SCOPE.md`, `REQUIREMENTS.md`, and `BUILD_PLAN.md` for the full spec and phased build plan. For how the code is actually wired together, see [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) and the per-module docs in [`docs/modules/`](docs/modules/).
 
-## The demo, in four parts
+## The demo, in three parts
 
-**1. Business dashboard** — the app's home page (`/`): a real KPI dashboard (MRR, overdue invoices, revenue trend, churn by plan, signups by country/month, support ticket volume), built entirely on this project's own chart components — not an embedded third-party BI tool (see `v2/SCOPE.md` §3 for why Metabase/Superset were evaluated and rejected). Every tile has an **"Ask AI about this"** link into Compass, the AI analyst, already anchored to that specific chart.
+**1. Landing page** — the app's root (`/`), making the actual pitch: a real dashboard plus a guardrailed AI analyst, with an animated Compass in the hero.
 
-**2. Compass** — a guardrailed AI analyst, reachable two ways: a persistent floating widget on every page (`MascotToggleButton`/`MascotPanel`, one question → one answer, anchored to whatever tile you clicked from), and a full-page, Claude-like running conversation at `/compass`. Both are thin UI layers over the exact same `/ask` pipeline as the classic ask bar — no second, weaker path to the database (see `docs/modules/compass.md`).
+**2. Business dashboard** — at `/dashboard`: a real KPI dashboard (MRR, overdue invoices, revenue trend, churn by plan, signups by country/month, support ticket volume), built entirely on this project's own chart components — not an embedded third-party BI tool (see `v2/SCOPE.md` §3 for why Metabase/Superset were evaluated and rejected). A persistent floating Compass widget is reachable from every page.
 
-**3. Classic ask bar** — the original single-input experience, now at `/ask`. Type a plain-English question about the seeded SaaS company's data; get back a chart, a 2-3 sentence explanation, and a "show generated SQL" toggle for transparency. Try an adversarial question ("delete all customers with overdue invoices") to see the guardrails visibly refuse it — that's the whole trust argument in one interaction, and it's identical whichever of the three entry points you ask it from.
+**3. Compass** — a guardrailed AI analyst, reachable two ways: the floating widget (`MascotToggleButton`/`MascotPanel`, one question → one answer) and a full-page, Claude-like running conversation at `/compass`. Both are thin UI layers over the same `/ask` pipeline the original ask bar used (still reachable directly at `/ask`, unlinked from the nav) — no second, weaker path to the database (see `docs/modules/compass.md`).
 
-**4. Landing page** — a marketing page at `/landing` making the actual pitch above, with an animated Compass in the hero.
-
-All three question-asking surfaces (dashboard widget, `/compass`, `/ask`) run through the identical three-layer guardrail pipeline (prompt instruction → sqlglot AST validation → a database role that is physically incapable of mutating data) — see `docs/modules/guardrails.md` for how, and `docs/modules/mascot-analyst.md` / `docs/modules/compass.md` for how each contextual entry point was proven to be exactly as safe as the plain ask bar, not a shortcut around it.
+Type a plain-English question about the seeded SaaS company's data anywhere Compass appears; get back a chart, a 2-3 sentence explanation, and a "show generated SQL" toggle for transparency. Try an adversarial question ("delete all customers with overdue invoices") to see the guardrails visibly refuse it — that's the whole trust argument in one interaction, and it's identical no matter which entry point you ask from, all running through the same three-layer guardrail pipeline (prompt instruction → sqlglot AST validation → a database role that is physically incapable of mutating data) — see `docs/modules/guardrails.md` for how, and `docs/modules/mascot-analyst.md` / `docs/modules/compass.md` for how each entry point was proven exactly as safe as the original, not a shortcut around it.
 
 ## Local development (Phase 0)
 

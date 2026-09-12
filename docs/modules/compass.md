@@ -14,9 +14,14 @@ Key files:
 
 v2's mascot ("Milo") was a single-turn, tile-anchored panel. v3 adds a full-page chat and a rename, but **every surface still calls the same `/ask` endpoint once per question** — a multi-turn *display* is not multi-step *reasoning*. See `v3/SCOPE.md` §3 for the explicit call that this doesn't reopen v2 SCOPE.md §6's "no chained AI reasoning" cut.
 
-### Dashboard is now the home route
+### Routing history: dashboard-as-home, then landing-as-home
 
-`/` renders what used to live at `/dashboard` (now a redirect to `/`), wrapped in `AppShell`/`TopNav`. v1's original ask-bar UI moved to `/ask`, unchanged in behavior. Reason: Abishek wanted the dashboard to be the product's front door, with real navigation instead of being one of several bare pages.
+Two rounds here, worth recording so this doesn't get silently re-litigated:
+
+1. **First**: `/` rendered the dashboard (wrapped in `AppShell`/`TopNav`), `/dashboard` redirected to it. v1's original ask-bar UI moved to `/ask`. Reason at the time: dashboard as the product's front door, with real navigation instead of a bare page.
+2. **Reversed** once the landing page (P6) existed: Abishek wanted the marketing page to be the actual root. `/` is now a route handler (`app/route.ts`) serving `public/landing.html` directly (no React page can share a segment with a route handler, hence `route.ts` not `page.tsx` at the root); the dashboard moved to `/dashboard` as a real page; `/landing` is kept only as a redirect to `/` so an old bookmark doesn't 404. `TopNav`'s brand mark and "Dashboard" nav item both point at `/dashboard` now, and the landing page's CTAs point at `/dashboard` instead of `/`.
+
+`/ask` (the classic single-input UI) is unaffected by either round — still reachable by direct URL, no longer linked from the nav (removed alongside this same round of feedback, since Compass covers that job now).
 
 ### Compass rebrand — naming + avatar
 
