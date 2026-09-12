@@ -13,7 +13,6 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { href: "/", label: "Dashboard" },
   { href: "/compass", label: "Ask Compass" },
-  { href: "/ask", label: "Classic Ask" },
 ];
 
 export function TopNav() {

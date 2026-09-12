@@ -16,18 +16,27 @@
   --color-violet-soft: var(--color-antique-white);
   --color-silver: var(--color-periwinkle);
 
-  --background: var(--color-ghost-white);
+  /* App-shell neutrals — deliberately NOT purple-tinted. A page-wide
+     lavender wash plus purple borders/gridlines/muted-text compounds fast
+     across a dense dashboard (every card edge, every axis line, every
+     tile label), even though each one alone looks fine in isolation. The
+     accent hues above stay purple; the chrome around them goes neutral
+     gray, matching the referenced Figma dashboard and how the landing
+     page reads (purple as a sparing accent against mostly white/gray). */
+  --background: #f7f7f9;
   --foreground: #2e2a5c;
   --surface: #ffffff;
-  --surface-muted: var(--color-antique-white);
-  --border: rgba(147, 129, 255, 0.24);
-  --text-muted: #6b6699;
+  --surface-muted: #f1f1f4;
+  --border: rgba(15, 15, 35, 0.08);
+  --text-muted: #6b7280;
   --accent: var(--color-indigo);
   --accent-strong: #6f5fe0;
   --accent-contrast: #ffffff;
 
   /* Chart tokens (dataviz skill) — single accent hue for single-series
-     bar/line marks; grid/axis kept recessive per the skill's mark specs. */
+     bar/line marks; grid/axis kept neutral and recessive per the skill's
+     mark specs (the data marks carry the brand color, not the chart's
+     own scaffolding). */
   --chart-surface: var(--surface);
   --chart-series-1: #6f5fe0;
   --chart-series-1-fill-from: rgba(111, 95, 224, 0.22);
@@ -37,8 +46,8 @@
      the landing page's restraint (purple as a sparing accent, not a fill
      color) is the target here too. */
   --chart-bar-fill: var(--color-periwinkle);
-  --chart-grid: rgba(147, 129, 255, 0.18);
-  --chart-axis: rgba(147, 129, 255, 0.4);
+  --chart-grid: rgba(15, 15, 35, 0.07);
+  --chart-axis: rgba(15, 15, 35, 0.22);
   --chart-label: var(--text-muted);
 
   /* Status palette — fixed, never themed, per dataviz skill's
@@ -109,12 +118,12 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #15122e;
+    --background: #131320;
     --foreground: var(--color-ghost-white);
-    --surface: #1e1a42;
-    --surface-muted: #241f52;
-    --border: rgba(184, 184, 255, 0.26);
-    --text-muted: rgba(184, 184, 255, 0.75);
+    --surface: #1c1c2b;
+    --surface-muted: #242434;
+    --border: rgba(230, 230, 240, 0.1);
+    --text-muted: rgba(230, 230, 240, 0.62);
     --accent: var(--color-periwinkle);
     --accent-strong: #a797ff;
     --accent-contrast: #15122e;
@@ -123,8 +132,8 @@
     --chart-series-1-fill-from: rgba(184, 184, 255, 0.28);
     --chart-series-1-fill-to: rgba(184, 184, 255, 0);
     --chart-bar-fill: rgba(184, 184, 255, 0.4);
-    --chart-grid: rgba(184, 184, 255, 0.16);
-    --chart-axis: rgba(184, 184, 255, 0.35);
+    --chart-grid: rgba(230, 230, 240, 0.08);
+    --chart-axis: rgba(230, 230, 240, 0.28);
   }
 }
 
