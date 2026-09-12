@@ -127,7 +127,7 @@ Status values: `Not started`, `In progress`, `Blocked (reason)`, `Done`.
 
 ## Flagged for Abishek
 
-- P3 and P4's "talking" / refusal / error visual states are code-correct (same rendering paths as the already-verified `/ask` and floating widget) but not screenshot-confirmed, because no backend was running during this build session to actually answer a question. Worth a quick real click-through once the backend's up — in particular P4's guardrail re-check (one adversarial question through `/compass`) is still owed, per the same discipline as v2's D5.
+- ~~P3 and P4's "talking" / refusal / error visual states are code-correct... not screenshot-confirmed~~ — **resolved.** With the real backend up (`aac_postgres` Docker container + `uvicorn` + configured Groq key), live-verified through `/compass`: "What's our current MRR?" returned the correct `$246,681.00` (matching D0/D1's independently-verified figure) with working stat tile + SQL toggle, and "Delete all customers with overdue invoices" was correctly refused ("I can only provide read-only SELECT queries and cannot perform deletions.") in the same amber styling as the ask bar/floating widget. Same guardrail outcome as v2's D5, now proven through `/compass` specifically too.
 
 ## Log of changes
 
