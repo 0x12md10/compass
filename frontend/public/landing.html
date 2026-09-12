@@ -11,6 +11,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.min.js"></script>
 <style>
   /* inferred: feature copy and closing line are written from the product's
      actual v1/v2/v3 SCOPE docs (dashboard + guardrailed NL->SQL + Compass),
@@ -239,6 +240,7 @@
     max-width: 380px;
     aspect-ratio: 1;
     border-radius: 32px;
+    overflow: hidden;
     background: radial-gradient(circle at 50% 35%, #ffffff 0%, var(--bg-deep) 70%);
     border: 1px solid var(--card-border);
     box-shadow: 0 40px 80px -40px rgba(46, 42, 92, 0.35);
@@ -247,16 +249,16 @@
     justify-content: center;
   }
 
-  .hero-visual img {
-    width: 74%;
-    height: auto;
-    animation: compassFloat 4s ease-in-out infinite;
+  .hero-visual canvas {
+    /* Absolute, not a flex child — a <canvas> carries its pixel
+       width/height as intrinsic size, which fights a flex container's
+       shrink-to-fit sizing (the classic flex min-content overflow
+       gotcha) even with width/height:100% set. */
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
     filter: drop-shadow(0 20px 30px rgba(46, 42, 92, 0.25));
-  }
-
-  @keyframes compassFloat {
-    0%, 100% { transform: translateY(0) rotate(0deg); }
-    50% { transform: translateY(-10px) rotate(-2deg); }
   }
 
   .hero-visual .badge {
@@ -494,8 +496,7 @@
     </div>
 
     <div class="hero-visual">
-      <div class="stage">
-        <img src="/mascot/compass-idle.png" alt="Compass, the AI analyst mascot" width="914" height="669">
+      <div class="stage" id="mascot-stage" role="img" aria-label="Compass, the AI analyst mascot, a 3D animated character">
         <span class="badge badge-1">● Live · MRR $246,681</span>
         <span class="badge badge-2">Compass: "Churn is down 4% this quarter."</span>
       </div>
@@ -661,6 +662,161 @@
         }
       });
   }, 2500);
+</script>
+
+<script>
+  // Real 3D Compass mascot (vanilla Three.js — this page is plain HTML/JS,
+  // not React, so it can't use the app's React-Three-Fiber component;
+  // same geometry/proportions ported over by hand so the two stay visually
+  // consistent). Guarded: if the CDN script didn't load, the badges still
+  // render fine without a mascot rather than throwing.
+  (function initMascot() {
+    if (typeof THREE === "undefined") {
+      console.error("Compass 3D mascot: THREE failed to load from CDN — check the <script> URL/version.");
+      return;
+    }
+    const stage = document.getElementById("mascot-stage");
+    if (!stage) return;
+
+    const COLOR = { ring: 0x9381ff, face: 0xffeedd, ink: 0x2e2a5c, peach: 0xffd8be };
+    const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
+    camera.position.set(0, 0, 9.5);
+
+    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+    stage.appendChild(renderer.domElement);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+    const dLight = new THREE.DirectionalLight(0xffffff, 1.3);
+    dLight.position.set(2.5, 3.5, 4);
+    scene.add(dLight);
+    const pLight1 = new THREE.PointLight(0xffffff, 0.5);
+    pLight1.position.set(-3, 1.5, 2);
+    scene.add(pLight1);
+    const pLight2 = new THREE.PointLight(0xb8b8ff, 0.25);
+    pLight2.position.set(0, -2, 3);
+    scene.add(pLight2);
+
+    const character = new THREE.Group();
+    const root = new THREE.Group();
+    root.position.set(0, 0.28, 0);
+    root.add(character);
+    scene.add(root);
+
+    function mesh(geo, color, physical) {
+      const mat = physical
+        ? new THREE.MeshPhysicalMaterial({ color, roughness: 0.32, clearcoat: 0.5 })
+        : new THREE.MeshStandardMaterial({ color, roughness: 0.45 });
+      return new THREE.Mesh(geo, mat);
+    }
+
+    // legs
+    [-0.32, 0.32].forEach((x) => {
+      const leg = new THREE.Group();
+      leg.position.set(x, -1.15, 0);
+      const shin = mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.5, 16), COLOR.ink);
+      shin.position.set(0, -0.28, 0);
+      const foot = mesh(new THREE.SphereGeometry(0.16, 16, 16), COLOR.ink);
+      foot.position.set(0, -0.55, 0.05);
+      leg.add(shin, foot);
+      character.add(leg);
+    });
+
+    // ring body + face
+    const ring = mesh(new THREE.TorusGeometry(1.05, 0.32, 32, 64), COLOR.ring, true);
+    character.add(ring);
+    const face = mesh(new THREE.CylinderGeometry(0.82, 0.82, 0.22, 48), COLOR.face);
+    face.position.set(0, 0, 0.12);
+    face.rotation.x = Math.PI / 2;
+    character.add(face);
+
+    // eyebrows
+    [
+      [-0.28, 0.42, 0.25],
+      [0.28, 0.42, -0.25],
+    ].forEach(([x, z, rot]) => {
+      const brow = mesh(new THREE.CapsuleGeometry(0.03, 0.22, 4, 8), COLOR.ring);
+      brow.position.set(x, 0.42, 0.24);
+      brow.rotation.z = z;
+      character.add(brow);
+    });
+
+    // eyes
+    [-0.28, 0.28].forEach((x) => {
+      const eye = new THREE.Group();
+      eye.position.set(x, 0.2, 0.2);
+      const white = mesh(new THREE.SphereGeometry(0.19, 24, 24), 0xffffff);
+      white.position.set(0, 0, 0.06);
+      const pupil = mesh(new THREE.SphereGeometry(0.115, 20, 20), COLOR.ink);
+      pupil.position.set(0.02, -0.02, 0.2);
+      const highlight = mesh(new THREE.SphereGeometry(0.03, 10, 10), 0xffffff);
+      highlight.position.set(-0.02, 0.04, 0.3);
+      eye.add(white, pupil, highlight);
+      character.add(eye);
+    });
+
+    // nose / needle (pivoted at the bead so it can spin around its own base)
+    const nose = new THREE.Group();
+    nose.position.set(0, 0.14, 0.3);
+    const cone = mesh(new THREE.ConeGeometry(0.13, 0.55, 20), COLOR.peach);
+    cone.position.set(0.03, -0.19, 0.12);
+    cone.rotation.set(0.5, 0, -0.35);
+    const bead = mesh(new THREE.SphereGeometry(0.09, 16, 16), COLOR.ink);
+    nose.add(cone, bead);
+    character.add(nose);
+
+    // arms — anchored just outside the ring's own radius (1.05 + 0.32 =
+    // 1.37) so the limb isn't half-swallowed by the torus geometry.
+    const arms = [];
+    [-1, 1].forEach((side) => {
+      const arm = new THREE.Group();
+      arm.position.set(side * 1.28, 0.55, 0.15);
+      const upper = mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.75, 16), COLOR.ring, true);
+      upper.position.set(side * -0.22, 0.22, 0);
+      upper.rotation.z = side * -0.95;
+      const hand = mesh(new THREE.SphereGeometry(0.19, 16, 16), COLOR.peach);
+      hand.position.set(side * -0.45, 0.5, 0);
+      arm.add(upper, hand);
+      [-0.15, 0.05, 0.25].forEach((dy, i) => {
+        const finger = mesh(new THREE.CapsuleGeometry(0.05, 0.2, 4, 8), COLOR.peach);
+        finger.position.set(side * -0.5, 0.68 + dy * 0.4, 0);
+        finger.rotation.z = side * (-0.2 + i * 0.35);
+        arm.add(finger);
+      });
+      character.add(arm);
+      arms.push(arm);
+    });
+
+    function fit() {
+      const w = stage.clientWidth;
+      const h = stage.clientHeight;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+    }
+    fit();
+    window.addEventListener("resize", fit);
+
+    const clock = new THREE.Clock();
+    function tick() {
+      const t = clock.getElapsedTime();
+      const dt = reducedMotion ? 0 : 1;
+
+      root.rotation.y = Math.sin(t * 0.5) * 0.35 * dt;
+      root.position.y = 0.28 + Math.sin(t * 1.6) * 0.06 * dt;
+      root.rotation.z = Math.sin(t * 1.6) * 0.02 * dt;
+
+      arms[0].rotation.z = 0.5 + Math.sin(t * 1.6 + Math.PI) * 0.08 * dt;
+      arms[1].rotation.z = -0.5 + Math.sin(t * 1.6) * 0.08 * dt;
+
+      renderer.render(scene, camera);
+      requestAnimationFrame(tick);
+    }
+    tick();
+  })();
 </script>
 
 </body>

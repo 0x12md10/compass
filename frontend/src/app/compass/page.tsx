@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 
 import { ChartRenderer } from "@/components/charts/ChartRenderer";
-import { CompassAvatar, type CompassState } from "@/components/mascot/CompassAvatar";
+import { CompassMascot3D, type CompassState } from "@/components/mascot/CompassMascot3D";
 import { AppShell } from "@/components/shell/AppShell";
 import { askQuestion, type AskResponse } from "@/lib/api";
 
@@ -64,7 +64,7 @@ export default function CompassChatPage() {
           <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-8 sm:px-6">
             {turns.length === 0 ? (
               <div className="flex flex-1 flex-col items-center gap-5 py-16 text-center">
-                <CompassAvatar state="idle" size={96} />
+                <CompassMascot3D state="idle" size={96} />
                 <div>
                   <h1 className="text-xl font-semibold text-[var(--foreground)]">Ask Compass</h1>
                   <p className="mt-1 text-sm text-[var(--text-muted)]">
@@ -93,7 +93,7 @@ export default function CompassChatPage() {
                   </div>
 
                   <div className="flex gap-3">
-                    <CompassAvatar
+                    <CompassMascot3D
                       state={turn.status === "loading" ? "thinking" : "talking"}
                       size={36}
                     />
@@ -156,7 +156,7 @@ export default function CompassChatPage() {
         <div className="border-t border-[var(--border)] bg-[var(--surface)]/90 backdrop-blur">
           <form onSubmit={handleSubmit} className="mx-auto flex w-full max-w-3xl items-center gap-2 px-4 py-4 sm:px-6">
             <div className="flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--background)] pl-2">
-              <CompassAvatar state={headerState} size={28} />
+              <CompassMascot3D state={headerState} size={28} />
             </div>
             <input
               value={input}

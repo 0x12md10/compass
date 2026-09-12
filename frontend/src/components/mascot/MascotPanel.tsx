@@ -5,7 +5,7 @@ import { useState, type FormEvent } from "react";
 import { ChartRenderer } from "@/components/charts/ChartRenderer";
 import { askQuestion, type AskResponse } from "@/lib/api";
 
-import { CompassAvatar, type CompassState } from "./CompassAvatar";
+import { CompassMascot3D, type CompassState } from "./CompassMascot3D";
 import { useMascot } from "./MascotContext";
 
 const MASCOT_NAME = "Compass";
@@ -55,7 +55,7 @@ export function MascotPanel() {
     <div className="fixed bottom-24 right-4 z-50 flex max-h-[70vh] w-[360px] max-w-[calc(100vw-2rem)] flex-col gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-xl sm:w-96">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <CompassAvatar state={compassState} size={40} />
+          <CompassMascot3D state={compassState} size={40} />
           <div>
             <div className="text-sm font-semibold text-[var(--foreground)]">{MASCOT_NAME}</div>
             <div className="text-xs text-[var(--text-muted)]">

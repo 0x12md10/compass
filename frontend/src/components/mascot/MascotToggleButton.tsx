@@ -1,6 +1,6 @@
 "use client";
 
-import { CompassAvatar } from "./CompassAvatar";
+import { CompassMascot3D } from "./CompassMascot3D";
 import { useMascot } from "./MascotContext";
 
 /** Persistent floating avatar — always reachable, not just via a tile's
@@ -17,7 +17,7 @@ export function MascotToggleButton() {
       {isOpen ? (
         <span className="text-xl text-[var(--text-muted)]">×</span>
       ) : (
-        <CompassAvatar state="idle" size={56} />
+        <CompassMascot3D state="idle" size={56} />
       )}
     </button>
   );
