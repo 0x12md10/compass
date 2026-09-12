@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AI Analytics Copilot",
-  description: "A guardrailed NL-to-SQL business dashboard with Compass, your AI analyst.",
+  title: "Compass",
+  description: "A real business dashboard with a guardrailed AI analyst built in.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

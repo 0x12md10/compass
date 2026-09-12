@@ -1,4 +1,4 @@
-# ARCHITECTURE.md — AI Analytics Copilot
+# ARCHITECTURE.md — Compass
 
 Reference doc for implementers (human or agent) picking this project back up mid-build. Read this first for the big picture; `docs/modules/*.md` covers each piece in implementation detail. `SCOPE.md` / `REQUIREMENTS.md` / `BUILD_PLAN.md` at the repo root remain the source of truth for *what* to build and *why it's scoped this way* — this doc is about *how it's actually wired together* as of the current state of the code.
 

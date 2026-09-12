@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { CompassLogo } from "./CompassLogo";
+
 interface NavItem {
   href: string;
   label: string;
@@ -21,11 +23,9 @@ export function TopNav() {
     <header className="sticky top-0 z-40 border-b border-[var(--border)] bg-[var(--surface)]/90 backdrop-blur">
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 sm:px-6">
         <Link href="/" className="flex items-center gap-2">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent-strong)] text-sm font-bold text-white">
-            AI
-          </span>
-          <span className="text-sm font-semibold tracking-tight text-[var(--foreground)] sm:text-base">
-            AI Analytics Copilot
+          <CompassLogo size={32} />
+          <span className="text-base font-semibold tracking-tight text-[var(--foreground)] sm:text-lg">
+            Compass
           </span>
         </Link>
 

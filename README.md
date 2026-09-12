@@ -1,6 +1,6 @@
-# AI Analytics Copilot
+# Compass
 
-> Ask your database a question in plain English — get a safe SQL query, a chart, and a plain-English answer. No BI tool, no SQL required.
+> A real business dashboard with a guardrailed AI analyst built in. Ask your database a question in plain English — get a safe SQL query, a chart, and a plain-English answer. No BI tool, no SQL required.
 
 **Status:** in progress (see `BUILD_PLAN.md`'s status tracker for current phase). This README is a placeholder for the public-facing version — the real architecture diagram and "how the guardrails work" section land in Phase 6.
 
