@@ -1,5 +1,4 @@
 import { StatTile } from "@/components/charts/StatTile";
-import { AskAiButton } from "@/components/mascot/AskAiButton";
 
 import { useDashboardTile } from "./useDashboardTile";
 
@@ -7,8 +6,6 @@ interface StatTileCardProps {
   title: string;
   path: string;
   format?: (value: string | number | null) => string | number;
-  /** Mascot context (v2 FR-M1) — omit to not show "Ask AI about this" on this tile. */
-  askAiContext?: string;
   /** Hero treatment for the headline point-in-time figures (MRR, overdue rate). */
   hero?: boolean;
 }
@@ -20,7 +17,7 @@ interface StatTileCardProps {
  * labeled box, so this doesn't use TileFrame (which would double the
  * title/border) — it mirrors TileFrame's loading/error look manually.
  */
-export function StatTileCard({ title, path, format, askAiContext, hero }: StatTileCardProps) {
+export function StatTileCard({ title, path, format, hero }: StatTileCardProps) {
   const { data, loading, error } = useDashboardTile(path);
 
   if (loading) {
@@ -41,14 +38,5 @@ export function StatTileCard({ title, path, format, askAiContext, hero }: StatTi
 
   const raw = data?.rows[0]?.[0] ?? null;
   const value = format ? format(raw) : (raw ?? "—");
-  return (
-    <div className="relative">
-      <StatTile label={title} value={value} hero={hero} />
-      {askAiContext && (
-        <div className="absolute right-4 top-4">
-          <AskAiButton tileName={title} context={askAiContext} />
-        </div>
-      )}
-    </div>
-  );
+  return <StatTile label={title} value={value} hero={hero} />;
 }

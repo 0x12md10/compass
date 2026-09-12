@@ -36,7 +36,7 @@ export function BarChartView({ data, xKey, yKey, colorForCategory }: BarChartVie
             {data.map((row, i) => (
               <Cell
                 key={i}
-                fill={colorForCategory ? colorForCategory(String(row[xKey])) : "var(--chart-series-1)"}
+                fill={colorForCategory ? colorForCategory(String(row[xKey])) : "var(--chart-bar-fill)"}
               />
             ))}
           </Bar>

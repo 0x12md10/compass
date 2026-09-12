@@ -32,6 +32,11 @@
   --chart-series-1: #6f5fe0;
   --chart-series-1-fill-from: rgba(111, 95, 224, 0.22);
   --chart-series-1-fill-to: rgba(111, 95, 224, 0);
+  /* Ranking/magnitude bars use a much softer tint than the line-chart
+     stroke — a page of solid saturated bars reads as "full of purple";
+     the landing page's restraint (purple as a sparing accent, not a fill
+     color) is the target here too. */
+  --chart-bar-fill: var(--color-periwinkle);
   --chart-grid: rgba(147, 129, 255, 0.18);
   --chart-axis: rgba(147, 129, 255, 0.4);
   --chart-label: var(--text-muted);
@@ -117,6 +122,7 @@
     --chart-series-1: #b8b8ff;
     --chart-series-1-fill-from: rgba(184, 184, 255, 0.28);
     --chart-series-1-fill-to: rgba(184, 184, 255, 0);
+    --chart-bar-fill: rgba(184, 184, 255, 0.4);
     --chart-grid: rgba(184, 184, 255, 0.16);
     --chart-axis: rgba(184, 184, 255, 0.35);
   }

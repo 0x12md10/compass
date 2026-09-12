@@ -24,7 +24,10 @@ export function TopNav() {
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 sm:px-6">
         <Link href="/" className="flex items-center gap-2">
           <CompassLogo size={32} />
-          <span className="text-base font-semibold tracking-tight text-[var(--foreground)] sm:text-lg">
+          <span
+            className="text-lg tracking-tight text-[var(--foreground)] sm:text-xl"
+            style={{ fontFamily: "var(--font-display)", fontWeight: 700 }}
+          >
             Compass
           </span>
         </Link>

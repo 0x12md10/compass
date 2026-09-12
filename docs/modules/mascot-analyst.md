@@ -85,4 +85,4 @@ This satisfies REQUIREMENTS.md §6's explicit acceptance bar — the mascot's co
 - **Change how context is worded**: edit the per-tile strings in `dashboard/page.tsx` — the backend doesn't template it beyond the one f-string in `nl_to_sql.ask()`.
 - **Add a new context-consuming feature**: reuse the same `context: str | None` parameter shape rather than inventing a second convention — `answer_question()` already threads it through.
 - **Change the mascot's persona/name**: `MASCOT_NAME` in `MascotPanel.tsx`.
-- **Add a new tile's "Ask AI about this"**: pass `askAiContext` to `ChartTileCard`/`StatTileCard` — omit it to leave a tile without the mascot entry point.
+- **Per-tile "Ask AI about this" (`AskAiButton`, `askAiContext`) was removed in v3** — redundant once the floating Compass widget became a persistent global entry point on every page. See `docs/modules/compass.md`. The underlying `openMascot(tileName, context)` tile-anchoring mechanism still exists in `MascotContext` if a future entry point ever wants it again.
