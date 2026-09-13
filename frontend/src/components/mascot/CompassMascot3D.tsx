@@ -59,22 +59,52 @@ function Bone({
   );
 }
 
-function Joint({ position, radius, color }: { position: [number, number, number]; radius: number; color: string }) {
+function Joint({
+  position,
+  radius,
+  color,
+  physical = true,
+}: {
+  position: [number, number, number];
+  radius: number;
+  color: string;
+  physical?: boolean;
+}) {
   return (
     <mesh position={position} castShadow receiveShadow>
       <sphereGeometry args={[radius, 24, 24]} />
-      <meshPhysicalMaterial color={color} roughness={0.42} clearcoat={0.32} clearcoatRoughness={0.45} />
+      {physical ? (
+        <meshPhysicalMaterial color={color} roughness={0.42} clearcoat={0.32} clearcoatRoughness={0.45} />
+      ) : (
+        <meshStandardMaterial color={color} roughness={0.5} />
+      )}
     </mesh>
   );
 }
 
 /** An open hand — a flattened palm with four fanned fingers and a thumb,
  * each an oriented capsule (not a straight offset copy), so it reads as a
- * hand rather than a sphere with lint stuck to it. */
-function Hand({ position, side }: { position: [number, number, number]; side: 1 | -1 }) {
+ * hand rather than a sphere with lint stuck to it. Oriented along the
+ * forearm's own direction (not left axis-aligned) — the fingers fan
+ * around local +Y, so without this the fingers point "up" in world space
+ * regardless of which way the arm is actually hanging, making them
+ * invisible/tucked against the forearm once the pose went arms-down. */
+function Hand({
+  position,
+  side,
+  direction,
+}: {
+  position: [number, number, number];
+  side: 1 | -1;
+  direction: [number, number, number];
+}) {
   const fingers = [-34, -11, 11, 34];
+  const quaternion = useMemo(
+    () => new THREE.Quaternion().setFromUnitVectors(UP, new THREE.Vector3(...direction).normalize()),
+    [direction]
+  );
   return (
-    <group position={position}>
+    <group position={position} quaternion={quaternion}>
       <mesh castShadow receiveShadow scale={[1, 0.82, 0.62]}>
         <sphereGeometry args={[0.22, 20, 20]} />
         <meshStandardMaterial color={COLOR.peach} roughness={0.5} />
@@ -82,19 +112,25 @@ function Hand({ position, side }: { position: [number, number, number]; side: 1 
       {fingers.map((deg) => {
         const rad = (deg * Math.PI) / 180;
         const dir: [number, number, number] = [Math.sin(rad), Math.cos(rad), 0];
-        const base: [number, number, number] = [dir[0] * 0.16, dir[1] * 0.16, 0.02];
-        const tip: [number, number, number] = [dir[0] * 0.44, dir[1] * 0.44, 0.02];
-        return <Bone key={deg} from={base} to={tip} radiusStart={0.05} radiusEnd={0.045} color={COLOR.peach} physical={false} />;
+        const base: [number, number, number] = [dir[0] * 0.17, dir[1] * 0.17, 0.02];
+        const tip: [number, number, number] = [dir[0] * 0.4, dir[1] * 0.4, 0.02];
+        return (
+          <group key={deg}>
+            <Bone from={base} to={tip} radiusStart={0.032} radiusEnd={0.024} color={COLOR.peach} physical={false} />
+            <Joint position={tip} radius={0.024} color={COLOR.peach} physical={false} />
+          </group>
+        );
       })}
       {/* thumb, angled out to the side rather than fanned with the fingers */}
       <Bone
-        from={[side * 0.12, -0.08, 0.06]}
-        to={[side * 0.34, -0.2, 0.1]}
-        radiusStart={0.06}
-        radiusEnd={0.052}
+        from={[side * 0.13, -0.08, 0.06]}
+        to={[side * 0.32, -0.19, 0.1]}
+        radiusStart={0.042}
+        radiusEnd={0.032}
         color={COLOR.peach}
         physical={false}
       />
+      <Joint position={[side * 0.32, -0.19, 0.1]} radius={0.032} color={COLOR.peach} physical={false} />
     </group>
   );
 }
@@ -167,12 +203,13 @@ function Character({ state }: CharacterProps) {
 
   // Arm pose, defined as real 3D joint points rather than a single rotated
   // rod: shoulder sits pulled slightly inside the ring's outer surface (so
-  // the joint sphere overlaps the torus and hides the seam), then an upper
-  // arm + forearm bend up toward a raised "jazz hands" hand position.
+  // the joint sphere overlaps the torus and hides the seam), then a
+  // relaxed, slightly bent arm hangs down at the side — a casual resting
+  // pose, not a permanently raised "jazz hands" wave.
   const armPose = (side: 1 | -1) => {
-    const shoulder: [number, number, number] = [side * 1.0, 0.72, 0.08];
-    const elbow: [number, number, number] = [side * 1.32, 1.22, 0.14];
-    const hand: [number, number, number] = [side * 1.24, 1.78, 0.2];
+    const shoulder: [number, number, number] = [side * 1.05, 0.15, 0.08];
+    const elbow: [number, number, number] = [side * 1.25, -0.45, 0.14];
+    const hand: [number, number, number] = [side * 1.05, -0.95, 0.18];
     return { shoulder, elbow, hand };
   };
   const rightPose = armPose(1);
@@ -242,14 +279,18 @@ function Character({ state }: CharacterProps) {
       ))}
 
       {/* nose / needle — a group pivoted at the bead so "thinking" can spin
-          just the needle around its own base, not the whole face. */}
-      <group ref={nose} position={[0, 0.14, 0.3]}>
-        <mesh position={[0.03, -0.19, 0.12]} rotation={[0.5, 0, -0.35]}>
-          <coneGeometry args={[0.13, 0.55, 20]} />
+          just the needle around its own base, not the whole face. Short and
+          hanging straight down (apex flipped via the ~180Β° X rotation,
+          since ConeGeometry's apex defaults to +Y) with only a slight
+          forward lean, so it reads as a nose seated on the face rather
+          than a long diagonal spike floating off to one side. */}
+      <group ref={nose} position={[0, 0.06, 0.3]}>
+        <mesh position={[0, -0.15, 0.05]} rotation={[Math.PI - 0.3, 0, 0]}>
+          <coneGeometry args={[0.115, 0.34, 20]} />
           <meshStandardMaterial color={COLOR.peach} roughness={0.45} />
         </mesh>
         <mesh>
-          <sphereGeometry args={[0.09, 16, 16]} />
+          <sphereGeometry args={[0.085, 16, 16]} />
           <meshStandardMaterial color={COLOR.ink} roughness={0.45} />
         </mesh>
       </group>
@@ -278,7 +319,11 @@ function Character({ state }: CharacterProps) {
               <Bone from={shoulder} to={elbow} radiusStart={0.15} radiusEnd={0.13} color={COLOR.ring} />
               <Joint position={elbow} radius={0.14} color={COLOR.ring} />
               <Bone from={elbow} to={hand} radiusStart={0.12} radiusEnd={0.1} color={COLOR.ring} />
-              <Hand position={hand} side={1} />
+              <Hand
+                position={hand}
+                side={1}
+                direction={[hand[0] - elbow[0], hand[1] - elbow[1], hand[2] - elbow[2]]}
+              />
             </>
           );
         })()}
@@ -302,7 +347,11 @@ function Character({ state }: CharacterProps) {
               <Bone from={shoulder} to={elbow} radiusStart={0.15} radiusEnd={0.13} color={COLOR.ring} />
               <Joint position={elbow} radius={0.14} color={COLOR.ring} />
               <Bone from={elbow} to={hand} radiusStart={0.12} radiusEnd={0.1} color={COLOR.ring} />
-              <Hand position={hand} side={-1} />
+              <Hand
+                position={hand}
+                side={-1}
+                direction={[hand[0] - elbow[0], hand[1] - elbow[1], hand[2] - elbow[2]]}
+              />
             </>
           );
         })()}
@@ -327,7 +376,7 @@ export function CompassMascot3D({ state, size = 64 }: CompassMascot3DProps) {
       <Canvas
         dpr={[1, 1.5]}
         shadows="soft"
-        camera={{ position: [0, 0, 10.5], fov: 30 }}
+        camera={{ position: [0, 0, 8.5], fov: 30 }}
         gl={{ alpha: true, antialias: true }}
       >
         {/* Manual lighting rig, deliberately not drei's <Environment> — that
@@ -341,14 +390,13 @@ export function CompassMascot3D({ state, size = 64 }: CompassMascot3DProps) {
         <directionalLight position={[3, 4, 5]} intensity={1.15} castShadow shadow-mapSize={[512, 512]} />
         <directionalLight position={[-3.5, 1.5, 2]} intensity={0.35} color="#ffffff" />
         <pointLight position={[0, 1, -3]} intensity={0.4} color="#b8b8ff" />
-        {/* Raised-hands pose is close to vertically balanced around the
-            ring's own center (hands top out around y=2.0, feet bottom out
-            around y=-1.9), so only a small recenter nudge is needed —
-            unlike the old pose, which was leg-heavy. */}
-        <group position={[0, -0.05, 0]}>
+        {/* Arms-down pose is top-heavy (the ring's own top is the highest
+            point now, ~1.37; feet bottom out around -1.71) — recenter up
+            so the bounding box, not just the ring, sits mid-frame. */}
+        <group position={[0, 0.17, 0]}>
           <Character state={state} />
         </group>
-        <ContactShadows position={[0, -1.95, 0]} opacity={0.4} scale={4.5} blur={2.2} far={2} />
+        <ContactShadows position={[0, -1.55, 0]} opacity={0.4} scale={4.5} blur={2.2} far={2} />
       </Canvas>
     </div>
   );

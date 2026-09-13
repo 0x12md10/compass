@@ -45,6 +45,14 @@ Two more real bugs, caught the same way as everywhere else in this project — b
 
 Camera position/FOV are duplicated across `CompassMascot3D.tsx` and `landing.html` — if one changes, check whether the other needs the same adjustment for visual consistency.
 
+**A fourth round of feedback, still on the same rigged version**: raised-arm "jazz hands" read as odd for a persistent avatar (Abishek: "why are hands risen, keep it down in a casual pose"), the finger capsules were too thick relative to their length ("fingers look like pipes"), and the nose looked disconnected from the face rather than seated on it. Fixed all three:
+- **Arm pose changed from raised to a relaxed hang at the side** (`armPose()`'s shoulder/elbow/hand points redefined — shoulder now mid-height on the ring instead of upper, hand ends near hip height instead of above the head). This shrank the character's bounding box a lot (no longer reaching above the ring), so the camera distance, the character's vertical recenter offset, and `ContactShadows`'s Y position all needed re-tuning again — same discipline as every pose change so far.
+- **A second real bug this surfaced**: with arms hanging down, the fingers became nearly invisible — they fan around each hand's local +Y axis, and the hand group was never rotated to match the forearm's actual direction, so fingers kept pointing world-"up" regardless of which way the arm pointed (harmless when arms pointed up; very visible once they pointed down, since the fingers ended up aimed back into the forearm instead of away from it). Fixed by giving `Hand` a `direction` prop and orienting the hand group with the same quaternion trick `Bone` uses, aligning local +Y with the actual forearm vector.
+- Fingers themselves thinned (radius ~0.033 → ~0.024, tapered) with a small sphere cap at each fingertip so the cut cylinder end doesn't read as a "pipe."
+- Nose shortened and re-oriented: previously a long cone tilted on two axes (`rotation={[0.5, 0, -0.35]}`), which read as a diagonal spike not attached to anything. Now a short cone flipped ~180Β° on X only (`Math.PI - 0.3`, since `ConeGeometry`'s apex defaults to +Y) so it hangs straight down from the bead with a slight forward lean, sitting under the eyes instead of floating off to one side.
+
+Ported identically into `landing.html`'s vanilla copy in the same pass — this is the kind of change (pose geometry, not just a color or a light) where forgetting the vanilla port is the likeliest way for the two to drift out of sync.
+
 ### `/compass` — full-page chat
 
 A new route: chronological multi-turn conversation, user bubbles right-aligned, Compass-fronted assistant cards left-aligned, reusing `ChartRenderer` and the SQL-toggle/refusal styling unmodified from the floating panel. Turn state (`{id, question, status, response?}`) lives in `useState` — no persistence, matching v1/v2's no-accounts posture. Empty state reuses the example-prompt pattern from `/ask`.

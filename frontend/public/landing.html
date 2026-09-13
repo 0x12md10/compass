@@ -683,7 +683,7 @@
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
-    camera.position.set(0, 0, 10.5);
+    camera.position.set(0, 0, 8.5);
 
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
@@ -708,7 +708,7 @@
 
     const character = new THREE.Group();
     const root = new THREE.Group();
-    root.position.set(0, -0.05, 0);
+    root.position.set(0, 0.17, 0);
     root.add(character);
     scene.add(root);
 
@@ -735,15 +735,19 @@
       m.castShadow = m.receiveShadow = true;
       return m;
     }
-    function joint(pos, radius, color) {
-      const m = meshOf(new THREE.SphereGeometry(radius, 24, 24), color, true);
+    function joint(pos, radius, color, physical) {
+      const m = meshOf(new THREE.SphereGeometry(radius, 24, 24), color, physical !== false);
       m.position.set(...pos);
       m.castShadow = m.receiveShadow = true;
       return m;
     }
-    function hand(pos, side) {
+    function hand(pos, side, direction) {
       const group = new THREE.Group();
       group.position.set(...pos);
+      // Oriented along the forearm's own direction — fingers fan around
+      // local +Y, so without this they'd point "up" in world space
+      // regardless of which way the arm actually hangs.
+      group.quaternion.setFromUnitVectors(UP, new THREE.Vector3(...direction).normalize());
       const palm = meshOf(new THREE.SphereGeometry(0.22, 20, 20), COLOR.peach, false);
       palm.scale.set(1, 0.82, 0.62);
       palm.castShadow = palm.receiveShadow = true;
@@ -751,11 +755,14 @@
       [-34, -11, 11, 34].forEach((deg) => {
         const rad = (deg * Math.PI) / 180;
         const dir = [Math.sin(rad), Math.cos(rad), 0];
-        const base = [dir[0] * 0.16, dir[1] * 0.16, 0.02];
-        const tip = [dir[0] * 0.44, dir[1] * 0.44, 0.02];
-        group.add(bone(base, tip, 0.05, 0.045, COLOR.peach, false));
+        const base = [dir[0] * 0.17, dir[1] * 0.17, 0.02];
+        const tip = [dir[0] * 0.4, dir[1] * 0.4, 0.02];
+        group.add(bone(base, tip, 0.032, 0.024, COLOR.peach, false));
+        group.add(joint(tip, 0.024, COLOR.peach, false));
       });
-      group.add(bone([side * 0.12, -0.08, 0.06], [side * 0.34, -0.2, 0.1], 0.06, 0.052, COLOR.peach, false));
+      const thumbTip = [side * 0.32, -0.19, 0.1];
+      group.add(bone([side * 0.13, -0.08, 0.06], thumbTip, 0.042, 0.032, COLOR.peach, false));
+      group.add(joint(thumbTip, 0.032, COLOR.peach, false));
       return group;
     }
 
@@ -817,24 +824,29 @@
       character.add(eye);
     });
 
-    // nose / needle (pivoted at the bead so it can spin around its own base)
+    // nose / needle (pivoted at the bead so it can spin around its own base).
+    // Short and hanging straight down (apex flipped via the ~180Β° X
+    // rotation, since ConeGeometry's apex defaults to +Y) with only a
+    // slight forward lean, so it reads as a nose seated on the face rather
+    // than a long diagonal spike floating off to one side.
     const nose = new THREE.Group();
-    nose.position.set(0, 0.14, 0.3);
-    const cone = meshOf(new THREE.ConeGeometry(0.13, 0.55, 20), COLOR.peach, false);
-    cone.position.set(0.03, -0.19, 0.12);
-    cone.rotation.set(0.5, 0, -0.35);
-    const bead = meshOf(new THREE.SphereGeometry(0.09, 16, 16), COLOR.ink, false);
+    nose.position.set(0, 0.06, 0.3);
+    const cone = meshOf(new THREE.ConeGeometry(0.115, 0.34, 20), COLOR.peach, false);
+    cone.position.set(0, -0.15, 0.05);
+    cone.rotation.set(Math.PI - 0.3, 0, 0);
+    const bead = meshOf(new THREE.SphereGeometry(0.085, 16, 16), COLOR.ink, false);
     nose.add(cone, bead);
     character.add(nose);
 
     // arms — real joints (shoulder/elbow spheres + two bones), the shoulder
     // pulled slightly inside the ring's outer surface so it overlaps the
-    // torus and hides the seam, bending up to a raised "jazz hands" pose.
+    // torus and hides the seam. A relaxed, slightly bent arm hangs down at
+    // the side — a casual resting pose, not a permanently raised wave.
     const arms = [];
     [-1, 1].forEach((side) => {
-      const shoulder = [side * 1.0, 0.72, 0.08];
-      const elbow = [side * 1.32, 1.22, 0.14];
-      const handPos = [side * 1.24, 1.78, 0.2];
+      const shoulder = [side * 1.05, 0.15, 0.08];
+      const elbow = [side * 1.25, -0.45, 0.14];
+      const handPos = [side * 1.05, -0.95, 0.18];
       const arm = new THREE.Group();
       arm.position.set(...shoulder);
       const rel = (p) => [p[0] - shoulder[0], p[1] - shoulder[1], p[2] - shoulder[2]];
@@ -844,7 +856,8 @@
       arm.add(bone([0, 0, 0], relElbow, 0.15, 0.13, COLOR.ring, true));
       arm.add(joint(relElbow, 0.14, COLOR.ring));
       arm.add(bone(relElbow, relHand, 0.12, 0.1, COLOR.ring, true));
-      arm.add(hand(relHand, side));
+      const armDir = [relHand[0] - relElbow[0], relHand[1] - relElbow[1], relHand[2] - relElbow[2]];
+      arm.add(hand(relHand, side, armDir));
       character.add(arm);
       arms.push(arm);
     });
@@ -865,7 +878,7 @@
       const dt = reducedMotion ? 0 : 1;
 
       root.rotation.y = Math.sin(t * 0.5) * 0.35 * dt;
-      root.position.y = -0.05 + Math.sin(t * 1.6) * 0.06 * dt;
+      root.position.y = 0.17 + Math.sin(t * 1.6) * 0.06 * dt;
       root.rotation.z = Math.sin(t * 1.6) * 0.02 * dt;
 
       arms[0].rotation.z = Math.sin(t * 1.6 + Math.PI) * 0.06 * dt;
